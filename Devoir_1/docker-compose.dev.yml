@@ -1,0 +1,36 @@
+# Docker Compose pour le développement itératif
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  # Configuration de développement pour le service web
+  web:
+    # Monter le répertoire static en volume pour permettre les modifications en temps réel
+    # Ainsi, on peut modifier HTML/CSS/JS sans reconstruire l'image
+    volumes:
+      - ./web/static:/app/static:ro  # ro = read-only dans le conteneur
+    
+    # Reconstruire automatiquement si nécessaire
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    
+    # Variables d'environnement pour le développement
+    environment:
+      - ENV=development
+
+  # Configuration de développement pour le service words
+  words:
+    # Activer le mode verbeux pour le debugging
+    environment:
+      - JAVA_OPTS=-Xmx8m -Xms8m -Ddebug=true
+      - ENV=development
+
+  # Configuration de développement pour la base de données
+  db:
+    # Persister les données localement pour le développement
+    environment:
+      - ENV=development
+
+

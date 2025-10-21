@@ -1,0 +1,184 @@
+# Fichier tout-en-un pour déployer Wordsmith sur Kubernetes
+# Usage: kubectl apply -f all-in-one.yaml
+
+---
+# Base de données PostgreSQL - Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  labels:
+    app: wordsmith
+    component: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordsmith
+      component: database
+  template:
+    metadata:
+      labels:
+        app: wordsmith
+        component: database
+    spec:
+      containers:
+      - name: db
+        image: jpetazzo/wordsmith-db:latest
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "trust"
+        volumeMounts:
+        - name: db-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: db-data
+        emptyDir: {}
+
+---
+# Base de données PostgreSQL - Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  labels:
+    app: wordsmith
+    component: database
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  selector:
+    app: wordsmith
+    component: database
+
+---
+# API REST Java - Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: words
+  labels:
+    app: wordsmith
+    component: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wordsmith
+      component: api
+  template:
+    metadata:
+      labels:
+        app: wordsmith
+        component: api
+    spec:
+      containers:
+      - name: words
+        image: jpetazzo/wordsmith-words:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx8m -Xms8m"
+        livenessProbe:
+          httpGet:
+            path: /noun
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /noun
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+---
+# API REST Java - Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: words
+  labels:
+    app: wordsmith
+    component: api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: wordsmith
+    component: api
+
+---
+# Frontend Web - Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    app: wordsmith
+    component: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wordsmith
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: wordsmith
+        component: frontend
+    spec:
+      containers:
+      - name: web
+        image: jpetazzo/wordsmith-web:latest
+        ports:
+        - containerPort: 80
+          name: http
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# Frontend Web - Service (LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    app: wordsmith
+    component: frontend
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: wordsmith
+    component: frontend
+
+

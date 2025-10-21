@@ -1,0 +1,111 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# .dockerignore - Fichiers à ignorer lors de la construction Docker
+# ══════════════════════════════════════════════════════════════════════════════
+# Rôle : Indique à Docker de NE PAS copier ces fichiers dans l'image
+# Pourquoi ? Réduire la taille + Accélérer le build + Éviter les fichiers sensibles
+# Similaire à .gitignore (pour Git)
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ Fichiers Git                                                                 │
+# └──────────────────────────────────────────────────────────────────────────────┘
+# Ces fichiers sont utiles pour le contrôle de version, pas pour le conteneur
+.git                # Dossier Git (peut faire 50-100 MB !) - inutile dans l'image
+.gitignore          # Configuration Git - le conteneur n'en a pas besoin
+.gitattributes      # Configuration Git - le conteneur n'en a pas besoin
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ Fichiers de documentation                                                    │
+# └──────────────────────────────────────────────────────────────────────────────┘
+# La documentation est pour les humains, pas pour l'exécution du conteneur
+README.md           # Documentation du projet - pour les développeurs seulement
+README.fr.md        # Documentation française - pour les développeurs seulement
+README.en.md        # Documentation anglaise - pour les développeurs seulement
+LICENSE             # Fichier de licence - pour les développeurs seulement
+*.md                # Tous les fichiers Markdown - inutiles dans l'image
+DEPLOYMENT.md       # Documentation de déploiement - pour les développeurs seulement
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ Fichiers de configuration Docker                                             │
+# └──────────────────────────────────────────────────────────────────────────────┘
+# Ces fichiers servent à CONSTRUIRE l'image, pas à être dedans
+docker-compose*.yml # Fichiers Docker Compose - ne doivent pas être dans le conteneur
+.dockerignore       # Ce fichier lui-même - ne doit pas être dans le conteneur
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ Configuration Kubernetes                                                     │
+# └──────────────────────────────────────────────────────────────────────────────┘
+# Les manifests Kubernetes sont pour le déploiement, pas pour le conteneur
+k8s/                # Dossier Kubernetes - utilisé uniquement pour le déploiement
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ Fichiers temporaires et logs                                                 │
+# └──────────────────────────────────────────────────────────────────────────────┘
+# Ces fichiers sont générés à l'exécution, inutiles dans l'image
+*.log               # Fichiers de logs - générés à l'exécution, inutiles
+*.tmp               # Fichiers temporaires - inutiles
+tmp/                # Dossier temporaire - inutile
+temp/               # Dossier temporaire - inutile
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ Fichiers d'éditeur de code (IDE)                                             │
+# └──────────────────────────────────────────────────────────────────────────────┘
+# Configuration des éditeurs de code, le conteneur n'en a pas besoin
+.vscode/            # Configuration Visual Studio Code - pour les développeurs
+.idea/              # Configuration IntelliJ IDEA - pour les développeurs
+*.swp               # Fichiers temporaires Vim - inutiles
+*.swo               # Fichiers temporaires Vim - inutiles
+*~                  # Fichiers de backup d'éditeur - inutiles
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ Fichiers du système d'exploitation                                           │
+# └──────────────────────────────────────────────────────────────────────────────┘
+# Fichiers générés par différents OS, le conteneur n'en a pas besoin
+.DS_Store           # Fichier système macOS - inutile
+Thumbs.db           # Fichier de miniatures Windows - inutile
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ Dossiers de dépendances                                                      │
+# └──────────────────────────────────────────────────────────────────────────────┘
+# Ces dépendances seront téléchargées pendant le build Docker
+node_modules/       # Dépendances Node.js (peut faire 200-500 MB !) - réinstallées dans l'image
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ Dossiers de sortie de compilation                                            │
+# └──────────────────────────────────────────────────────────────────────────────┘
+# Les fichiers compilés seront régénérés pendant le build Docker
+**/target/          # Sortie de compilation Java/Maven - recompilée dans Docker
+**/build/           # Sortie de compilation générique - régénérée dans Docker
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ Fichiers de cache                                                            │
+# └──────────────────────────────────────────────────────────────────────────────┘
+# Les fichiers de cache augmentent la taille de l'image inutilement
+.cache/             # Dossier de cache - inutile
+*.cache             # Fichiers de cache - inutiles
+
+# ══════════════════════════════════════════════════════════════════════════════
+# RÉSUMÉ - Pourquoi .dockerignore est essentiel ?
+# ══════════════════════════════════════════════════════════════════════════════
+# 
+# SANS .dockerignore :
+#   ❌ Image très grande (inclut .git, node_modules = plusieurs centaines de MB)
+#   ❌ Build lent (copie tous les fichiers inutiles)
+#   ❌ Risque de sécurité (peut copier des fichiers .env, mots de passe, etc.)
+# 
+# AVEC .dockerignore :
+#   ✅ Image plus petite (seulement les fichiers nécessaires)
+#   ✅ Build plus rapide (ne copie pas les fichiers inutiles)
+#   ✅ Plus sécurisé (n'inclut pas les fichiers de configuration)
+# 
+# Exemple concret :
+#   - Dossier .git : 50-100 MB économisés
+#   - Dossier node_modules : 200-500 MB économisés
+#   - Total : Peut réduire la taille de l'image de 90% !
+# 
+# Analogie simple :
+#   Quand vous déménagez, vous n'emportez pas les cartons vides,
+#   les vieux journaux, ni les meubles cassés → Pareil avec .dockerignore !
+# ══════════════════════════════════════════════════════════════════════════════
+
+

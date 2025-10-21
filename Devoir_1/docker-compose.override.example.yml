@@ -1,0 +1,27 @@
+# Exemple de fichier d'override pour déployer plusieurs stacks
+# 
+# Pour déployer plusieurs instances de Wordsmith sur la même machine :
+# 
+# 1. Créer un fichier docker-compose.override.yml avec ce contenu
+# 2. Modifier le port exposé ci-dessous (ex: 8001, 8002, etc.)
+# 3. Lancer avec: docker compose -p wordsmith-instance1 up -d
+# 
+# Exemple pour une 2ème instance :
+#   docker compose -p wordsmith-instance2 up -d
+#   (après avoir changé le port dans docker-compose.override.yml)
+
+version: '3.8'
+
+services:
+  web:
+    ports:
+      - "8080:80"  # Modifier ce port pour chaque instance (8080, 8081, 8082, etc.)
+    container_name: null  # Permet à Docker de générer un nom automatique
+    
+  words:
+    container_name: null
+    
+  db:
+    container_name: null
+
+

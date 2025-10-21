@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    app: wordsmith
+    component: frontend
+spec:
+  replicas: 2  # On peut avoir plusieurs réplicas pour la haute disponibilité
+  selector:
+    matchLabels:
+      app: wordsmith
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: wordsmith
+        component: frontend
+    spec:
+      containers:
+      - name: web
+        image: jpetazzo/wordsmith-web:latest
+        ports:
+        - containerPort: 80
+          name: http
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          limits:
+            memory: "64Mi"
+            cpu: "200m"
+          requests:
+            memory: "32Mi"
+            cpu: "100m"
+
+

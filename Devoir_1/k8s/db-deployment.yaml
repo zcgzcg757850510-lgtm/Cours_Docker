@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  labels:
+    app: wordsmith
+    component: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordsmith
+      component: database
+  template:
+    metadata:
+      labels:
+        app: wordsmith
+        component: database
+    spec:
+      containers:
+      - name: db
+        image: jpetazzo/wordsmith-db:latest
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "trust"
+        volumeMounts:
+        - name: db-data
+          mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: db-data
+        emptyDir: {}  # Pour la production, utilisez un PersistentVolumeClaim
+
+

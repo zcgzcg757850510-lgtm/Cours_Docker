@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: words
+  labels:
+    app: wordsmith
+    component: api
+spec:
+  replicas: 2  # On peut avoir plusieurs réplicas pour la haute disponibilité
+  selector:
+    matchLabels:
+      app: wordsmith
+      component: api
+  template:
+    metadata:
+      labels:
+        app: wordsmith
+        component: api
+    spec:
+      containers:
+      - name: words
+        image: jpetazzo/wordsmith-words:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx8m -Xms8m"
+        livenessProbe:
+          httpGet:
+            path: /noun
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /noun
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          limits:
+            memory: "64Mi"
+            cpu: "200m"
+          requests:
+            memory: "32Mi"
+            cpu: "100m"
+
+
