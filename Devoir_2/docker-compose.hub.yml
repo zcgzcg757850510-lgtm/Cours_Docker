@@ -18,9 +18,9 @@ services:
   # ════════════════════════════════════════════════════════════════════════════
   db:
     # image : Utilise l'image publiée sur Docker Hub
-    # ⚠️  REMPLACER "votre-username" par votre nom d'utilisateur Docker Hub !
+    # ⚠️  REMPLACER "deesee3" par votre nom d'utilisateur Docker Hub !
     # Exemple : jpetazzo/wordsmith-db:latest
-    image: votre-username/wordsmith-db:latest
+    image: deesee3/wordsmith-db:latest
     
     container_name: wordsmith-db
     
@@ -43,8 +43,8 @@ services:
   # SERVICE 2 : API REST (Image depuis Docker Hub)
   # ════════════════════════════════════════════════════════════════════════════
   words:
-    # ⚠️  REMPLACER "votre-username" par votre nom d'utilisateur Docker Hub !
-    image: votre-username/wordsmith-words:latest
+    # ⚠️  REMPLACER "deesee3" par votre nom d'utilisateur Docker Hub !
+    image: deesee3/wordsmith-words:latest
     
     container_name: wordsmith-words
     depends_on:
@@ -60,8 +60,8 @@ services:
   # SERVICE 3 : SERVEUR WEB (Image depuis Docker Hub)
   # ════════════════════════════════════════════════════════════════════════════
   web:
-    # ⚠️  REMPLACER "votre-username" par votre nom d'utilisateur Docker Hub !
-    image: votre-username/wordsmith-web:latest
+    # ⚠️  REMPLACER "deesee3" par votre nom d'utilisateur Docker Hub !
+    image: deesee3/wordsmith-web:latest
     
     container_name: wordsmith-web
     depends_on:
@@ -84,7 +84,7 @@ volumes:
 # UTILISATION :
 # ══════════════════════════════════════════════════════════════════════════════
 # 
-# 1. Remplacer "votre-username" par votre nom Docker Hub
+# 1. Remplacer "deesee3" par votre nom Docker Hub
 # 
 # 2. Lancer l'application :
 #    docker compose -f docker-compose.hub.yml up -d
