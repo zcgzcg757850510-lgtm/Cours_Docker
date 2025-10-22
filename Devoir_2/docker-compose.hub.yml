@@ -1,0 +1,98 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# DOCKER COMPOSE - UTILISATION DES IMAGES DE DOCKER HUB
+# ══════════════════════════════════════════════════════════════════════════════
+# Ce fichier utilise les images PUBLIÉES sur Docker Hub
+# au lieu de les construire localement
+# 
+# Usage : docker compose -f docker-compose.hub.yml up -d
+# 
+# Avantage : Pas besoin de construire les images localement !
+#            Télécharge directement depuis Docker Hub (comme Docker Desktop)
+# ══════════════════════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  # ════════════════════════════════════════════════════════════════════════════
+  # SERVICE 1 : BASE DE DONNÉES (Image depuis Docker Hub)
+  # ════════════════════════════════════════════════════════════════════════════
+  db:
+    # image : Utilise l'image publiée sur Docker Hub
+    # ⚠️  REMPLACER "votre-username" par votre nom d'utilisateur Docker Hub !
+    # Exemple : jpetazzo/wordsmith-db:latest
+    image: votre-username/wordsmith-db:latest
+    
+    container_name: wordsmith-db
+    
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    
+    networks:
+      - wordsmith-network
+    
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SERVICE 2 : API REST (Image depuis Docker Hub)
+  # ════════════════════════════════════════════════════════════════════════════
+  words:
+    # ⚠️  REMPLACER "votre-username" par votre nom d'utilisateur Docker Hub !
+    image: votre-username/wordsmith-words:latest
+    
+    container_name: wordsmith-words
+    depends_on:
+      - db
+    
+    networks:
+      - wordsmith-network
+    
+    environment:
+      - JAVA_OPTS=-Xmx8m -Xms8m
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SERVICE 3 : SERVEUR WEB (Image depuis Docker Hub)
+  # ════════════════════════════════════════════════════════════════════════════
+  web:
+    # ⚠️  REMPLACER "votre-username" par votre nom d'utilisateur Docker Hub !
+    image: votre-username/wordsmith-web:latest
+    
+    container_name: wordsmith-web
+    depends_on:
+      - words
+    
+    ports:
+      - "80:80"
+    
+    networks:
+      - wordsmith-network
+
+networks:
+  wordsmith-network:
+    driver: bridge
+
+volumes:
+  db-data:
+
+# ══════════════════════════════════════════════════════════════════════════════
+# UTILISATION :
+# ══════════════════════════════════════════════════════════════════════════════
+# 
+# 1. Remplacer "votre-username" par votre nom Docker Hub
+# 
+# 2. Lancer l'application :
+#    docker compose -f docker-compose.hub.yml up -d
+# 
+# 3. Les images seront téléchargées depuis Docker Hub
+#    (comme quand vous faites "docker pull nginx")
+# 
+# 4. Avantage : Pas besoin de construire localement !
+#    Quelqu'un d'autre peut utiliser vos images directement
+# ══════════════════════════════════════════════════════════════════════════════
+

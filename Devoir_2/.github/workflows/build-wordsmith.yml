@@ -1,0 +1,146 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# GITHUB ACTIONS WORKFLOW - BUILD ET PUSH DES IMAGES WORDSMITH
+# ══════════════════════════════════════════════════════════════════════════════
+# Ce workflow automatise la construction et la publication des images Docker
+# Déclenché lors d'un Pull Request ou d'un Push sur la branche principale
+# ══════════════════════════════════════════════════════════════════════════════
+
+name: Build Wordsmith Images
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Déclencheurs du workflow
+# ──────────────────────────────────────────────────────────────────────────────
+on:
+  # Déclenché quand un label "build" est ajouté à une Pull Request
+  pull_request:
+    types: [labeled]
+  
+  # Déclenché lors d'un push sur les branches main/master
+  push:
+    branches:
+      - main
+      - master
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Jobs à exécuter
+# ──────────────────────────────────────────────────────────────────────────────
+jobs:
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 1 : BUILD ET PUSH DE L'IMAGE DB (PostgreSQL)
+  # ════════════════════════════════════════════════════════════════════════════
+  build-db:
+    name: Build and Push DB Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Étape 1 : Récupérer le code source
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Étape 2 : Se connecter à Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      # Étape 3 : Configurer Docker Buildx (pour builds avancés)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # Étape 4 : Construire et pousser l'image avec 3 tags différents
+      - name: Build and push DB image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./db
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/wordsmith-db:latest
+            ${{ secrets.DOCKER_USERNAME }}/wordsmith-db:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/wordsmith-db:v1.0
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 2 : BUILD ET PUSH DE L'IMAGE WORDS (API Java)
+  # ════════════════════════════════════════════════════════════════════════════
+  build-words:
+    name: Build and Push Words Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # Construire et pousser avec 3 tags
+      - name: Build and push Words image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./words
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/wordsmith-words:latest
+            ${{ secrets.DOCKER_USERNAME }}/wordsmith-words:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/wordsmith-words:v1.0
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 3 : BUILD ET PUSH DE L'IMAGE WEB (Frontend Go)
+  # ════════════════════════════════════════════════════════════════════════════
+  build-web:
+    name: Build and Push Web Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # Construire et pousser avec 3 tags
+      - name: Build and push Web image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./web
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/wordsmith-web:latest
+            ${{ secrets.DOCKER_USERNAME }}/wordsmith-web:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/wordsmith-web:v1.0
+
+# ══════════════════════════════════════════════════════════════════════════════
+# RÉSUMÉ DU WORKFLOW :
+# ══════════════════════════════════════════════════════════════════════════════
+# 
+# Quand se déclenche-t-il ?
+#   - Lors d'un Pull Request avec le label "build"
+#   - Lors d'un push sur main/master
+# 
+# Que fait-il ?
+#   1. Checkout du code source
+#   2. Connexion à Docker Hub (avec secrets)
+#   3. Construction des 3 images EN PARALLÈLE (db, words, web)
+#   4. Push des images vers Docker Hub avec 3 tags :
+#      - latest (dernière version)
+#      - SHA du commit (traçabilité)
+#      - v1.0 (version sémantique)
+# 
+# Configuration requise dans GitHub :
+#   Secrets à créer (Settings > Secrets and variables > Actions) :
+#   - DOCKER_USERNAME : Votre nom d'utilisateur Docker Hub
+#   - DOCKER_PASSWORD : Votre token d'accès Docker Hub
+# ══════════════════════════════════════════════════════════════════════════════
+

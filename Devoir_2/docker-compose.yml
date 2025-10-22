@@ -1,0 +1,169 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# ÉTAPE 4 : DOCKER COMPOSE - ORCHESTRATION DES 3 SERVICES
+# ══════════════════════════════════════════════════════════════════════════════
+# Ce fichier orchestre (coordonne) les 3 conteneurs Docker :
+#   - db (PostgreSQL)
+#   - words (API REST Java)
+#   - web (Serveur web Go)
+# 
+# Docker Compose permet de :
+#   ✅ Démarrer tous les conteneurs avec une seule commande
+#   ✅ Créer un réseau privé pour qu'ils communiquent
+#   ✅ Gérer les dépendances (ordre de démarrage)
+#   ✅ Configurer les volumes (stockage persistant)
+# ══════════════════════════════════════════════════════════════════════════════
+
+# version : Spécifie la version de la syntaxe Docker Compose
+# '3.8' = Version actuelle, compatible avec Docker Engine 19.03+
+version: '3.8'
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ SECTION SERVICES : Définition des 3 conteneurs de l'application             │
+# └──────────────────────────────────────────────────────────────────────────────┘
+services:
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SERVICE 1 : BASE DE DONNÉES (PostgreSQL)
+  # ════════════════════════════════════════════════════════════════════════════
+  db:
+    # build : Chemin vers le Dockerfile à utiliser
+    # ./db = Utilise le Dockerfile dans le dossier db/
+    build: ./db
+    
+    # image : Nom de l'image Docker qui sera créée
+    # wordsmith-db = Image stockée localement avec ce nom
+    image: wordsmith-db
+    
+    # container_name : Nom du conteneur en cours d'exécution
+    # Utile pour le retrouver avec "docker ps"
+    container_name: wordsmith-db
+    
+    # environment : Variables d'environnement passées au conteneur
+    # POSTGRES_HOST_AUTH_METHOD=trust = Pas de mot de passe (DEV ONLY!)
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    
+    # networks : Réseau(x) auquel le conteneur est connecté
+    # wordsmith-network = Réseau privé créé plus bas
+    # Permet aux conteneurs de communiquer entre eux
+    networks:
+      - wordsmith-network
+    
+    # volumes : Stockage persistant des données
+    # db-data:/var/lib/postgresql/data signifie :
+    #   → Les données PostgreSQL sont stockées dans le volume "db-data"
+    #   → Même si le conteneur est supprimé, les données restent !
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    
+    # healthcheck : Vérifie que PostgreSQL fonctionne correctement
+    healthcheck:
+      # test : Commande à exécuter pour vérifier la santé
+      # pg_isready = Commande PostgreSQL qui vérifie si la DB répond
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      # interval : Fréquence des vérifications (toutes les 10 secondes)
+      interval: 10s
+      # timeout : Temps maximum pour la vérification (5 secondes)
+      timeout: 5s
+      # retries : Nombre d'échecs avant de marquer comme "unhealthy"
+      retries: 5
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SERVICE 2 : API REST (Java)
+  # ════════════════════════════════════════════════════════════════════════════
+  words:
+    build: ./words
+    image: wordsmith-words
+    container_name: wordsmith-words
+    
+    # depends_on : Indique les dépendances entre services
+    # - db : Le service "words" ne démarre qu'APRÈS le service "db"
+    # Important : Assure que la base de données est prête avant l'API
+    depends_on:
+      - db
+    
+    networks:
+      - wordsmith-network
+    
+    # environment : Configuration Java
+    # JAVA_OPTS = Options passées à la JVM (machine virtuelle Java)
+    #   -Xmx8m = Mémoire maximum : 8 MB
+    #   -Xms8m = Mémoire initiale : 8 MB
+    # Note : 8 MB est suffisant pour cette petite API
+    environment:
+      - JAVA_OPTS=-Xmx8m -Xms8m
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SERVICE 3 : SERVEUR WEB (Go)
+  # ════════════════════════════════════════════════════════════════════════════
+  web:
+    build: ./web
+    image: wordsmith-web
+    container_name: wordsmith-web
+    
+    # depends_on : Le web démarre APRÈS words (qui démarre APRÈS db)
+    # Ordre de démarrage : db → words → web
+    depends_on:
+      - words
+    
+    # ports : Mappages de ports HOST:CONTENEUR
+    # "80:80" signifie :
+    #   → Port 80 de votre PC (HOST) ← → Port 80 du conteneur
+    #   → Permet d'accéder au site via http://localhost:80
+    # Note : Seul le service "web" expose un port vers l'extérieur
+    #        Les services "db" et "words" sont accessibles UNIQUEMENT
+    #        depuis le réseau interne "wordsmith-network"
+    ports:
+      - "80:80"
+    
+    networks:
+      - wordsmith-network
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ SECTION NETWORKS : Réseaux Docker                                           │
+# └──────────────────────────────────────────────────────────────────────────────┘
+# Permet aux conteneurs de communiquer entre eux de manière isolée
+
+networks:
+  # wordsmith-network : Nom du réseau
+  wordsmith-network:
+    # driver : Type de réseau
+    # bridge = Réseau local isolé sur votre machine
+    # Les conteneurs peuvent se parler par leur nom de service
+    # Exemple : "words" peut contacter "db" via l'URL "postgresql://db:5432"
+    driver: bridge
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │ SECTION VOLUMES : Stockage persistant                                       │
+# └──────────────────────────────────────────────────────────────────────────────┘
+# Volumes Docker = Espaces de stockage qui survivent à la suppression des conteneurs
+
+volumes:
+  # db-data : Volume pour stocker les données PostgreSQL
+  # Créé automatiquement par Docker
+  # Localisation : /var/lib/docker/volumes/wordsmith_db-data (sur Linux/Mac)
+  #                Géré par Docker Desktop (sur Windows)
+  db-data:
+
+# ══════════════════════════════════════════════════════════════════════════════
+# RÉSUMÉ DU FONCTIONNEMENT :
+# ══════════════════════════════════════════════════════════════════════════════
+# 1. Commande: docker compose up -d
+# 
+# 2. Docker Compose fait :
+#    a) Crée le réseau "wordsmith-network"
+#    b) Crée le volume "db-data"
+#    c) Démarre "db" (PostgreSQL)
+#    d) Attend que "db" soit sain (healthcheck)
+#    e) Démarre "words" (API Java)
+#    f) Démarre "web" (Serveur Go)
+# 
+# 3. Les conteneurs communiquent :
+#    web (port 80) → words:8080 → db:5432
+# 
+# 4. Vous accédez via :
+#    http://localhost:80 (navigateur)
+# 
+# 5. Commande pour arrêter: docker compose down
+# ══════════════════════════════════════════════════════════════════════════════
+

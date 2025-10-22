@@ -1,0 +1,54 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# .dockerignore - Fichiers à ignorer lors de la construction Docker
+# ══════════════════════════════════════════════════════════════════════════════
+# Rôle : Indique à Docker de NE PAS copier ces fichiers dans l'image
+# Pourquoi ? Réduire la taille + Accélérer le build + Éviter les fichiers sensibles
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Fichiers Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+README.fr.md
+README.en.md
+LICENSE
+*.md
+
+# Fichiers de configuration Docker
+docker-compose*.yml
+.dockerignore
+
+# Répertoires Kubernetes
+k8s/
+
+# Fichiers temporaires et logs
+*.log
+*.tmp
+tmp/
+temp/
+
+# Fichiers IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node modules
+node_modules/
+
+# Build outputs (pour Java)
+**/target/
+**/build/
+
+# Fichiers de cache
+.cache/
+*.cache
+
